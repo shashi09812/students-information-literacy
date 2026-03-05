@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h2 class="text-2xl font-bold text-indigo-700 mb-6">Prediction Dashboard</h2>
+
+<!-- Input Sliders -->
+<div class="bg-gray-50 rounded-xl p-6 border mb-8">
+  <h3 class="text-xl font-semibold text-gray-800 mb-4">Input Metrics</h3>
+
+  <!-- Study Time -->
+  <div class="mb-5">
+    <label for="study-time" class="block text-base font-semibold text-gray-700 mb-1">Total Study Time (Hours)</label>
+    <input type="range" id="study-time" min="0" max="100" value="35" class="w-full" />
+    <p class="text-indigo-700 font-semibold text-right mt-2"><span id="study-time-value">35</span> hours</p>
+  </div>
+
+  <!-- Quizzes Taken -->
+  <div class="mb-5">
+    <label for="quizzes-taken" class="block text-base font-semibold text-gray-700 mb-1">Interactive Quizzes/Activities Completed</label>
+    <input type="range" id="quizzes-taken" min="0" max="20" value="7" class="w-full" />
+    <p class="text-indigo-700 font-semibold text-right mt-2"><span id="quizzes-taken-value">7</span> quizzes</p>
+  </div>
+
+  <!-- Pre-Test Score -->
+  <div class="mb-6">
+    <label for="pre-test-score" class="block text-base font-semibold text-gray-700 mb-1">Pre-Test Score (%)</label>
+    <input type="range" id="pre-test-score" min="0" max="100" value="33" class="w-full" />
+    <p class="text-indigo-700 font-semibold text-right mt-2"><span id="pre-test-score-value">33</span> %</p>
+  </div>
+
+  <button id="predict-button" class="w-full py-4 rounded-xl bg-indigo-700 text-white text-lg font-bold shadow hover:bg-indigo-800 transition">
+    Get Ensemble Prediction
+  </button>
+</div>
+
+<!-- Prediction Result -->
+<div class="bg-white p-6 rounded-xl shadow-xl border mb-8">
+  <h3 class="text-xl font-semibold text-gray-800 mb-3 border-b pb-2">Prediction Result & Refinement</h3>
+  <div id="prediction-results" class="min-h-[80px] flex flex-col justify-center items-center"></div>
+</div>
+
+<script>
+  // Save slider inputs to local storage for sync across pages
+  function saveInputsToLocalStorage() {
+    localStorage.setItem('studyTime', document.getElementById('study-time').value);
+    localStorage.setItem('quizzesTaken', document.getElementById('quizzes-taken').value);
+    localStorage.setItem('preTestScore', document.getElementById('pre-test-score').value);
+  }
+
+  // Update slider values and sync
+  ['study-time', 'quizzes-taken', 'pre-test-score'].forEach(sliderId => {
+    document.getElementById(sliderId).addEventListener('input', event => {
+      document.getElementById(sliderId + '-value').textContent = event.target.value;
+      saveInputsToLocalStorage();
+    });
+  });
+  window.onload = saveInputsToLocalStorage;
+
+  // Color classifier for prediction cards
+  function classifyScore(score) {
+    if (score >= 75)
+      return { text: "High Effect", color: "text-green-800", bg: "bg-green-100" };
+    if (score >= 50)
+      return { text: "Moderate Effect", color: "text-orange-800", bg: "bg-orange-100" };
+    return { text: "Low Effect", color: "text-red-700", bg: "bg-red-100" };
+  }
+
+  function weightedAverageModel(studyTime, quizzes, preTest) {
+    const st = studyTime / 100;
+    const qt = quizzes / 20;
+    const pt = preTest / 100;
+    return (st * 0.45 + qt * 0.3 + pt * 0.25) * 100;
+  }
+  function decisionTreeModel(studyTime, quizzes, preTest) {
+    let score = 30;
+    if (studyTime >= 60) score += 30;
+    else if (studyTime >= 30) score += 15;
+    if (quizzes >= 10) score += 20;
+    if (preTest < 50 && studyTime >= 70) score += 10;
+    else if (preTest >= 70) score += 10;
+    return Math.min(Math.max(score, 0), 100);
+  }
+  function nearestNeighborModel(studyTime, quizzes, preTest) {
+    const idealStudy = 80, idealQuizzes = 18, idealPreTest = 70;
+    const dist = Math.abs(studyTime - idealStudy) / 100 * 0.4
+      + Math.abs(quizzes - idealQuizzes) / 20 * 0.3
+      + Math.abs(preTest - idealPreTest) / 100 * 0.3;
+    return Math.min(Math.max(100 - dist * 100 * 1.5, 0), 100);
+  }
+
+  document.getElementById('predict-button').addEventListener('click', () => {
+    const studyTime = parseInt(document.getElementById('study-time').value);
+    const quizzesTaken = parseInt(document.getElementById('quizzes-taken').value);
+    const preTestScore = parseInt(document.getElementById('pre-test-score').value);
+
+    // Calculate scores
+    const results = {
+      WeightedAverage: { score: weightedAverageModel(studyTime, quizzesTaken, preTestScore) },
+      DecisionTree: { score: decisionTreeModel(studyTime, quizzesTaken, preTestScore) },
+      NearestNeighbor: { score: nearestNeighborModel(studyTime, quizzesTaken, preTestScore) }
+    };
+    Object.keys(results).forEach(key => results[key].classification = classifyScore(results[key].score).text);
+
+    // Ensemble average
+    const ensembleScore = (results.WeightedAverage.score + results.DecisionTree.score + results.NearestNeighbor.score) / 3;
+    const resultClass = classifyScore(ensembleScore);
+
+    // Show prediction card
+    document.getElementById('prediction-results').innerHTML = `
+      <div class="p-4 ${resultClass.bg} rounded-xl border mt-4 text-center">
+        <span class="text-2xl font-bold ${resultClass.color}">${resultClass.text}</span>
+        <p class="text-gray-800 mt-2">Predicted Score: <strong>${ensembleScore.toFixed(1)}%</strong></p>
+        <button id="save-history" class="mt-4 px-6 py-3 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition">Save to History</button>
+      </div>
+    `;
+
+    // Save to database
+    setTimeout(() => {
+      document.getElementById('save-history').onclick = () => {
+        fetch('/save_prediction', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            study_time: studyTime,
+            quizzes_taken: quizzesTaken,
+            pre_test_score: preTestScore,
+            score: ensembleScore,
+            classification: resultClass.text,
+            model_results: JSON.stringify(results)
+          })
+        }).then(() => window.location.href = '/history');
+      };
+    }, 100);
+  });
+</script>
+{% endblock %}

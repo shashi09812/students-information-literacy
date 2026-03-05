@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Model Comparison{% endblock %}
+{% block content %}
+
+<h2 class="text-2xl font-bold text-indigo-700 mb-4">Model Comparison Analysis</h2>
+<p class="text-gray-600 mb-6">
+  Compare how different machine learning approaches react to the same input data.
+  This helps understand model sensitivity.
+</p>
+<div class="mb-8 font-semibold text-lg">
+  Current Inputs: <span id="input-summary" class="text-indigo-700"></span>
+</div>
+<div id="comp-cards" class="grid grid-cols-1 md:grid-cols-3 gap-8"></div>
+
+<script>
+  // Read synced values
+  const studyTime = parseInt(localStorage.getItem('studyTime')) || 35;
+  const quizzesTaken = parseInt(localStorage.getItem('quizzesTaken')) || 8;
+  const preTestScore = parseInt(localStorage.getItem('preTestScore')) || 33;
+
+  document.getElementById('input-summary').textContent =
+    `${studyTime}h Time, ${quizzesTaken} Quizzes, ${preTestScore}% Pre-Test`;
+
+  function classifyScore(score) {
+    if (score >= 75)
+      return { text: "High Effect", color: "text-green-800", bg: "bg-green-100" };
+    if (score >= 50)
+      return { text: "Moderate Effect", color: "text-orange-800", bg: "bg-orange-100" };
+    return { text: "Low Effect", color: "text-red-700", bg: "bg-red-100" };
+  }
+
+  const models = [
+    {
+      name: "Weighted Average (Linear)",
+      desc: "A simple linear model. Good for baseline performance.",
+      fn: (st, qt, pt) => (st/100 * 0.45 + qt/20 * 0.3 + pt/100 * 0.25) * 100
+    },
+    {
+      name: "Decision Tree (Threshold-based)",
+      desc: "Uses thresholds/rules. Sensitive to minimums.",
+      fn: (st, qt, pt) => {
+        let score = 30;
+        if (st >= 60) score += 30;
+        else if (st >= 30) score += 15;
+        if (qt >= 10) score += 20;
+        if (pt < 50 && st >= 70) score += 10;
+        else if (pt >= 70) score += 10;
+        return Math.min(100, Math.max(0, score));
+      }
+    },
+    {
+      name: "Nearest Neighbor (Distance)",
+      desc: "Measures similarity to ideal student profile.",
+      fn: (st, qt, pt) => {
+        const idealStudy = 80, idealQuizzes = 18, idealPreTest = 70;
+        const dist = Math.abs(st - idealStudy) / 100 * 0.4
+          + Math.abs(qt - idealQuizzes) / 20 * 0.3
+          + Math.abs(pt - idealPreTest) / 100 * 0.3;
+        return Math.min(100, Math.max(0, 100 - dist * 100 * 1.5));
+      }
+    }
+  ];
+
+  let cardsHtml = '';
+  models.forEach(model => {
+    const score = model.fn(studyTime, quizzesTaken, preTestScore);
+    const classification = classifyScore(score);
+    cardsHtml += `
+      <div class="rounded-2xl p-6 border shadow ${classification.bg}">
+        <h3 class="text-xl font-bold mb-2 ${classification.color}">${model.name}</h3>
+        <p class="mb-3 text-gray-700">${model.desc}</p>
+        <div class="text-3xl font-mono font-black ${classification.color}">${score.toFixed(2)} <span class="text-base">/ 100</span></div>
+        <div class="mt-2 font-semibold ${classification.color}">${classification.text}</div>
+      </div>
+    `;
+  });
+
+  document.getElementById('comp-cards').innerHTML = cardsHtml;
+</script>
+{% endblock %}
