@@ -1,0 +1,8 @@
+version: "1"
+services:
+  - type: web
+    name: student-info-service
+    runtime: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python app.py"
+    
