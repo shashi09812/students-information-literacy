@@ -28,9 +28,9 @@ echo.
 
 :: 3. Ensure analytical models are present
 echo [3/4] Verifying analytical models...
-if not exist "models\random_forest.joblib" (
+if not exist "backend\models\random_forest.joblib" (
     echo [INFO] Models missing. Training fresh analytical components...
-    python ml_models.py
+    python backend\ml_models.py
 ) else (
     echo [OK] Models are ready.
 )
@@ -45,7 +45,7 @@ echo ------------------------------------------------------------
 echo.
 
 :: Use Waitress for professional performance as configured in wsgi.py
-python app.py
+python backend\app.py
 
 pause
 ENDLOCAL

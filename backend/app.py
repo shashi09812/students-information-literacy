@@ -12,7 +12,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
 
-app = Flask(__name__)
+app = Flask(__name__, 
+            template_folder='../frontend/templates',
+            static_folder='../frontend/static')
 app.secret_key = os.environ.get('SECRET_KEY', 'super_secret_learning_predictor_key_123')
 # PostgreSQL Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/info_literacy_db')
@@ -48,7 +50,10 @@ for name in ['decision_tree', 'knn', 'naive_bayes', 'neural_net', 'random_forest
         dict_key = name.replace('_', ' ').title()
         if dict_key == 'Neural Net':
             pass # Name as is
-        models[dict_key] = joblib.load(f'models/{name}.joblib')
+        # Absolute path to models folder within backend
+        backend_dir = os.path.dirname(os.path.abspath(__file__))
+        model_path = os.path.join(backend_dir, 'models', f'{name}.joblib')
+        models[dict_key] = joblib.load(model_path)
     except Exception as e:
         print(f"Model {name} not found: {e}")
 
