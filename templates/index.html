@@ -2,60 +2,80 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<h2 class="text-2xl font-bold text-indigo-700 mb-6">Prediction Dashboard</h2>
+<h2 class="text-3xl font-extrabold text-indigo-800 mb-2">Learning Effect Assessment</h2>
+<p class="text-gray-600 mb-8 border-b pb-6">
+  Welcome to the Information Literacy dashboard. Estimate the learning effect based on key behavioral characteristics:
+  Information Thinking, Information Retrieval, and Information Ethics. Provide your metrics below to generate a tailored
+  assessment.
+</p>
 
 <!-- Input Sliders -->
-<div class="bg-gray-50 rounded-xl p-6 border mb-8">
-  <h3 class="text-xl font-semibold text-gray-800 mb-4">Input Metrics</h3>
+<div class="bg-indigo-50/50 rounded-2xl p-6 border border-indigo-100 shadow-sm mb-8">
+  <h3 class="text-xl font-bold text-gray-800 mb-6">Student Behavior Metrics</h3>
 
-  <!-- Study Time -->
+  <!-- Information Thinking -> Study time in hours -->
   <div class="mb-5">
-    <label for="study-time" class="block text-base font-semibold text-gray-700 mb-1">Total Study Time (Hours)</label>
-    <input type="range" id="study-time" min="0" max="100" value="35" class="w-full" />
-    <p class="text-indigo-700 font-semibold text-right mt-2"><span id="study-time-value">35</span> hours</p>
+    <label for="info-thinking" class="block text-base font-semibold text-gray-700 mb-1">Study Time (Hours)</label>
+    <input type="range" id="info-thinking" min="0" max="100" value="65" class="w-full" />
+    <p class="text-indigo-700 font-semibold text-right mt-2"><span id="info-thinking-value">65</span> %</p>
   </div>
 
-  <!-- Quizzes Taken -->
+  <!-- Information Retrieval -> Quizzes taken -->
   <div class="mb-5">
-    <label for="quizzes-taken" class="block text-base font-semibold text-gray-700 mb-1">Interactive Quizzes/Activities Completed</label>
-    <input type="range" id="quizzes-taken" min="0" max="20" value="7" class="w-full" />
-    <p class="text-indigo-700 font-semibold text-right mt-2"><span id="quizzes-taken-value">7</span> quizzes</p>
+    <label for="info-retrieval" class="block text-base font-semibold text-gray-700 mb-1">Quizzes Taken</label>
+    <input type="range" id="info-retrieval" min="0" max="100" value="60" class="w-full" />
+    <p class="text-indigo-700 font-semibold text-right mt-2"><span id="info-retrieval-value">60</span> %</p>
   </div>
 
-  <!-- Pre-Test Score -->
+  <!-- Information Ethics -> Pre test / Quizzes score -->
   <div class="mb-6">
-    <label for="pre-test-score" class="block text-base font-semibold text-gray-700 mb-1">Pre-Test Score (%)</label>
-    <input type="range" id="pre-test-score" min="0" max="100" value="33" class="w-full" />
-    <p class="text-indigo-700 font-semibold text-right mt-2"><span id="pre-test-score-value">33</span> %</p>
+    <label for="info-ethics" class="block text-base font-semibold text-gray-700 mb-1">Pre-test / Quizzes Score
+      (%)</label>
+    <input type="range" id="info-ethics" min="0" max="100" value="75" class="w-full" />
+    <p class="text-indigo-700 font-semibold text-right mt-2"><span id="info-ethics-value">75</span> %</p>
   </div>
 
-  <button id="predict-button" class="w-full py-4 rounded-xl bg-indigo-700 text-white text-lg font-bold shadow hover:bg-indigo-800 transition">
-    Get Ensemble Prediction
+  <button id="predict-button"
+    class="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-lg font-bold shadow-lg shadow-indigo-200 transition-all transform hover:-translate-y-0.5 mt-4">
+    Analyze Learning Effect
   </button>
 </div>
 
 <!-- Prediction Result -->
-<div class="bg-white p-6 rounded-xl shadow-xl border mb-8">
-  <h3 class="text-xl font-semibold text-gray-800 mb-3 border-b pb-2">Prediction Result & Refinement</h3>
-  <div id="prediction-results" class="min-h-[80px] flex flex-col justify-center items-center"></div>
+<div class="bg-white p-8 rounded-2xl shadow-xl shadow-indigo-100/50 border border-gray-100 mb-8">
+  <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-3">Final Assessment</h3>
+  <div id="prediction-results" class="min-h-[80px] flex flex-col justify-center items-center text-gray-500">
+    Adjust the metrics above and run the analysis to view the assessment outcome.
+  </div>
 </div>
 
 <script>
   // Save slider inputs to local storage for sync across pages
   function saveInputsToLocalStorage() {
-    localStorage.setItem('studyTime', document.getElementById('study-time').value);
-    localStorage.setItem('quizzesTaken', document.getElementById('quizzes-taken').value);
-    localStorage.setItem('preTestScore', document.getElementById('pre-test-score').value);
+    localStorage.setItem('infoThinking', document.getElementById('info-thinking').value);
+    localStorage.setItem('infoRetrieval', document.getElementById('info-retrieval').value);
+    localStorage.setItem('infoEthics', document.getElementById('info-ethics').value);
   }
 
   // Update slider values and sync
-  ['study-time', 'quizzes-taken', 'pre-test-score'].forEach(sliderId => {
+  ['info-thinking', 'info-retrieval', 'info-ethics'].forEach(sliderId => {
     document.getElementById(sliderId).addEventListener('input', event => {
       document.getElementById(sliderId + '-value').textContent = event.target.value;
       saveInputsToLocalStorage();
     });
   });
-  window.onload = saveInputsToLocalStorage;
+
+  window.onload = function () {
+    const keys = ['infoThinking', 'infoRetrieval', 'infoEthics'];
+    const ids = ['info-thinking', 'info-retrieval', 'info-ethics'];
+    keys.forEach((key, index) => {
+      const val = localStorage.getItem(key);
+      if (val !== null) {
+        document.getElementById(ids[index]).value = val;
+        document.getElementById(ids[index] + '-value').textContent = val;
+      }
+    });
+  };
 
   // Color classifier for prediction cards
   function classifyScore(score) {
@@ -66,72 +86,78 @@
     return { text: "Low Effect", color: "text-red-700", bg: "bg-red-100" };
   }
 
-  function weightedAverageModel(studyTime, quizzes, preTest) {
-    const st = studyTime / 100;
-    const qt = quizzes / 20;
-    const pt = preTest / 100;
-    return (st * 0.45 + qt * 0.3 + pt * 0.25) * 100;
-  }
-  function decisionTreeModel(studyTime, quizzes, preTest) {
-    let score = 30;
-    if (studyTime >= 60) score += 30;
-    else if (studyTime >= 30) score += 15;
-    if (quizzes >= 10) score += 20;
-    if (preTest < 50 && studyTime >= 70) score += 10;
-    else if (preTest >= 70) score += 10;
-    return Math.min(Math.max(score, 0), 100);
-  }
-  function nearestNeighborModel(studyTime, quizzes, preTest) {
-    const idealStudy = 80, idealQuizzes = 18, idealPreTest = 70;
-    const dist = Math.abs(studyTime - idealStudy) / 100 * 0.4
-      + Math.abs(quizzes - idealQuizzes) / 20 * 0.3
-      + Math.abs(preTest - idealPreTest) / 100 * 0.3;
-    return Math.min(Math.max(100 - dist * 100 * 1.5, 0), 100);
-  }
-
   document.getElementById('predict-button').addEventListener('click', () => {
-    const studyTime = parseInt(document.getElementById('study-time').value);
-    const quizzesTaken = parseInt(document.getElementById('quizzes-taken').value);
-    const preTestScore = parseInt(document.getElementById('pre-test-score').value);
+    const infoThinking = parseFloat(document.getElementById('info-thinking').value);
+    const infoRetrieval = parseFloat(document.getElementById('info-retrieval').value);
+    const infoEthics = parseFloat(document.getElementById('info-ethics').value);
+    const btn = document.getElementById('predict-button');
+    btn.textContent = "Processing...";
+    btn.disabled = true;
 
-    // Calculate scores
-    const results = {
-      WeightedAverage: { score: weightedAverageModel(studyTime, quizzesTaken, preTestScore) },
-      DecisionTree: { score: decisionTreeModel(studyTime, quizzesTaken, preTestScore) },
-      NearestNeighbor: { score: nearestNeighborModel(studyTime, quizzesTaken, preTestScore) }
-    };
-    Object.keys(results).forEach(key => results[key].classification = classifyScore(results[key].score).text);
+    fetch('/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        info_thinking: infoThinking,
+        info_retrieval: infoRetrieval,
+        info_ethics: infoEthics
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        btn.textContent = "Analyze Learning Effect";
+        btn.disabled = false;
 
-    // Ensemble average
-    const ensembleScore = (results.WeightedAverage.score + results.DecisionTree.score + results.NearestNeighbor.score) / 3;
-    const resultClass = classifyScore(ensembleScore);
+        if (data.error) {
+          alert(data.error);
+          return;
+        }
 
-    // Show prediction card
-    document.getElementById('prediction-results').innerHTML = `
-      <div class="p-4 ${resultClass.bg} rounded-xl border mt-4 text-center">
-        <span class="text-2xl font-bold ${resultClass.color}">${resultClass.text}</span>
-        <p class="text-gray-800 mt-2">Predicted Score: <strong>${ensembleScore.toFixed(1)}%</strong></p>
-        <button id="save-history" class="mt-4 px-6 py-3 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition">Save to History</button>
-      </div>
-    `;
+        const { results, ensembleScore, ensembleClass } = data;
+        const resultClassInfo = classifyScore(ensembleScore); // Fallback color styling
 
-    // Save to database
-    setTimeout(() => {
-      document.getElementById('save-history').onclick = () => {
-        fetch('/save_prediction', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            study_time: studyTime,
-            quizzes_taken: quizzesTaken,
-            pre_test_score: preTestScore,
-            score: ensembleScore,
-            classification: resultClass.text,
-            model_results: JSON.stringify(results)
-          })
-        }).then(() => window.location.href = '/history');
-      };
-    }, 100);
+        // Override text with the actual class prediction just in case it differs slightly from score mapping
+        resultClassInfo.text = ensembleClass;
+
+        // Show prediction card
+        document.getElementById('prediction-results').innerHTML = `
+        <div class="p-6 ${resultClassInfo.bg} rounded-xl border mt-2 text-center w-full shadow-sm">
+          <div class="uppercase tracking-wider text-xs font-bold mb-2 ${resultClassInfo.color} opacity-80">Predicted Outcome</div>
+          <span class="text-3xl font-extrabold ${resultClassInfo.color}">${resultClassInfo.text}</span>
+          <p class="text-gray-700 mt-3 font-medium">Confidence Level: <strong>${ensembleScore.toFixed(1)}%</strong></p>
+          <div class="mt-6 flex justify-center gap-4">
+            <button id="save-history" class="px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold shadow hover:bg-indigo-700 transition">Save to History</button>
+            <a href="/compare" class="px-6 py-3 rounded-lg bg-white border border-gray-300 text-gray-700 font-semibold shadow-sm hover:bg-gray-50 transition">View Breakdown</a>
+          </div>
+        </div>
+      `;
+
+        // Save to database
+        setTimeout(() => {
+          document.getElementById('save-history').onclick = () => {
+            fetch('/save_prediction', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: new URLSearchParams({
+                info_thinking: infoThinking,
+                info_retrieval: infoRetrieval,
+                info_ethics: infoEthics,
+                score: ensembleScore,
+                classification: resultClassInfo.text,
+                model_results: JSON.stringify(results)
+              })
+            }).then(() => {
+              alert("Assessment saved to history!");
+            });
+          };
+        }, 100);
+      })
+      .catch(err => {
+        console.error(err);
+        btn.textContent = "Get Ensemble Prediction";
+        btn.disabled = false;
+        alert("Error generating prediction. Check console.");
+      });
   });
 </script>
 {% endblock %}

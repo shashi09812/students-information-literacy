@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Authorized Access Only{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-xl border border-gray-100 mt-10">
+    <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-100 text-indigo-700 mb-4">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                </path>
+            </svg>
+        </div>
+        <h2 class="text-2xl font-extrabold text-gray-900">Secure Access</h2>
+        <p class="text-gray-500 mt-2">Please log in to access the Learning Predictor dashboard.</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="p-4 mb-6 text-sm rounded-lg {% if category == 'error' %}bg-red-50 text-red-800 border fill-red-200 border-red-200{% else %}bg-indigo-50 text-indigo-800 border border-indigo-200{% endif %}"
+        role="alert">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form action="/login" method="POST" class="space-y-6">
+        <div>
+            <label for="username" class="block text-sm font-medium text-gray-700">Authorized Username</label>
+            <input type="text" name="username" id="username" required
+                class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+        </div>
+
+        <div>
+            <label for="password" class="block text-sm font-medium text-gray-700">Secure Password</label>
+            <input type="password" name="password" id="password" required
+                class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+        </div>
+
+        <button type="submit"
+            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+            Authenticate
+        </button>
+    </form>
+
+    <div class="mt-6 text-center">
+        <p class="text-sm text-gray-600">New mentor? <a href="/signup"
+                class="text-indigo-600 font-semibold hover:underline">Register here</a></p>
+    </div>
+</div>
+{% endblock %}

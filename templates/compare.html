@@ -2,10 +2,10 @@
 {% block title %}Model Comparison{% endblock %}
 {% block content %}
 
-<h2 class="text-2xl font-bold text-indigo-700 mb-4">Model Comparison Analysis</h2>
+<h2 class="text-3xl font-extrabold text-indigo-800 mb-4">Assessment Breakdown</h2>
 <p class="text-gray-600 mb-6">
-  Compare how different machine learning approaches react to the same input data.
-  This helps understand model sensitivity.
+  Review how different pedagogical analysis models evaluate the student's behavior.
+  This provides a comprehensive view of the learning effect.
 </p>
 <div class="mb-8 font-semibold text-lg">
   Current Inputs: <span id="input-summary" class="text-indigo-700"></span>
@@ -14,12 +14,12 @@
 
 <script>
   // Read synced values
-  const studyTime = parseInt(localStorage.getItem('studyTime')) || 35;
-  const quizzesTaken = parseInt(localStorage.getItem('quizzesTaken')) || 8;
-  const preTestScore = parseInt(localStorage.getItem('preTestScore')) || 33;
+  const infoThinking = parseFloat(localStorage.getItem('infoThinking')) || 65;
+  const infoRetrieval = parseFloat(localStorage.getItem('infoRetrieval')) || 60;
+  const infoEthics = parseFloat(localStorage.getItem('infoEthics')) || 75;
 
   document.getElementById('input-summary').textContent =
-    `${studyTime}h Time, ${quizzesTaken} Quizzes, ${preTestScore}% Pre-Test`;
+    `Study Time: ${infoThinking}h, Quizzes: ${infoRetrieval}, Pre-test Score: ${infoEthics}%`;
 
   function classifyScore(score) {
     if (score >= 75)
@@ -29,52 +29,56 @@
     return { text: "Low Effect", color: "text-red-700", bg: "bg-red-100" };
   }
 
-  const models = [
-    {
-      name: "Weighted Average (Linear)",
-      desc: "A simple linear model. Good for baseline performance.",
-      fn: (st, qt, pt) => (st/100 * 0.45 + qt/20 * 0.3 + pt/100 * 0.25) * 100
-    },
-    {
-      name: "Decision Tree (Threshold-based)",
-      desc: "Uses thresholds/rules. Sensitive to minimums.",
-      fn: (st, qt, pt) => {
-        let score = 30;
-        if (st >= 60) score += 30;
-        else if (st >= 30) score += 15;
-        if (qt >= 10) score += 20;
-        if (pt < 50 && st >= 70) score += 10;
-        else if (pt >= 70) score += 10;
-        return Math.min(100, Math.max(0, score));
-      }
-    },
-    {
-      name: "Nearest Neighbor (Distance)",
-      desc: "Measures similarity to ideal student profile.",
-      fn: (st, qt, pt) => {
-        const idealStudy = 80, idealQuizzes = 18, idealPreTest = 70;
-        const dist = Math.abs(st - idealStudy) / 100 * 0.4
-          + Math.abs(qt - idealQuizzes) / 20 * 0.3
-          + Math.abs(pt - idealPreTest) / 100 * 0.3;
-        return Math.min(100, Math.max(0, 100 - dist * 100 * 1.5));
-      }
-    }
-  ];
+  document.getElementById('comp-cards').innerHTML = '<div class="col-span-3 text-center text-gray-500 py-10">Running ML Models...</div>';
 
-  let cardsHtml = '';
-  models.forEach(model => {
-    const score = model.fn(studyTime, quizzesTaken, preTestScore);
-    const classification = classifyScore(score);
-    cardsHtml += `
-      <div class="rounded-2xl p-6 border shadow ${classification.bg}">
-        <h3 class="text-xl font-bold mb-2 ${classification.color}">${model.name}</h3>
-        <p class="mb-3 text-gray-700">${model.desc}</p>
-        <div class="text-3xl font-mono font-black ${classification.color}">${score.toFixed(2)} <span class="text-base">/ 100</span></div>
-        <div class="mt-2 font-semibold ${classification.color}">${classification.text}</div>
-      </div>
-    `;
-  });
+  fetch('/predict', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      info_thinking: infoThinking,
+      info_retrieval: infoRetrieval,
+      info_ethics: infoEthics
+    })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+        document.getElementById('comp-cards').innerHTML = `<div class="col-span-3 text-red-600">${data.error}</div>`;
+        return;
+      }
+      const results = data.results;
+      let cardsHtml = '';
 
-  document.getElementById('comp-cards').innerHTML = cardsHtml;
+      // Ordered models to display with user-friendly names
+      const orderedModels = [
+        { key: 'Decision Tree', label: 'Rule-Based Analysis', desc: 'Predicts based on threshold milestones.' },
+        { key: 'KNN', label: 'Cohort Comparison', desc: 'Compares with similar student profiles.' },
+        { key: 'Naive Bayes', label: 'Probability Assessment', desc: 'Statistical probability of success.' },
+        { key: 'Random Forest', label: 'Comprehensive Evaluation', desc: 'A consolidated analysis of behavioral characteristics.' }
+      ];
+
+      orderedModels.forEach(m => {
+        const resData = results[m.key];
+        if (!resData) return;
+
+        const classification = classifyScore(resData.score);
+        // Ensure text is the exact predicted class
+        classification.text = resData.classification;
+
+        cardsHtml += `
+        <div class="rounded-2xl p-6 border shadow ${classification.bg} ${m.key === 'Random Forest' ? 'ring-2 ring-indigo-500 transform scale-105' : ''}">
+          <h3 class="text-lg font-bold mb-2 ${classification.color}">${m.label}</h3>
+          <p class="mb-4 text-sm text-gray-700 h-10">${m.desc}</p>
+          <div class="text-2xl font-black ${classification.color}">${resData.score.toFixed(1)}% <span class="text-sm font-normal">Confidence</span></div>
+          <div class="mt-2 text-lg font-bold ${classification.color}">${classification.text}</div>
+        </div>
+      `;
+      });
+
+      document.getElementById('comp-cards').innerHTML = cardsHtml;
+    })
+    .catch(err => {
+      document.getElementById('comp-cards').innerHTML = `<div class="col-span-3 text-red-600">Failed to load predictions.</div>`;
+    });
 </script>
 {% endblock %}
