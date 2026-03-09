@@ -75,7 +75,7 @@ class Prediction(db.Model):
     info_ethics = db.Column(db.Float, nullable=False)
     score = db.Column(db.Float, nullable=False)
     classification = db.Column(db.String(50), nullable=False)
-    model_results = db.Column(db.String(1000), nullable=False)
+    model_results = db.Column(db.String(5000), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 @app.route("/")
@@ -114,6 +114,9 @@ def login():
             session['username'] = user.username
             flash(f'Welcome back, Mentor {username}!', 'success')
             next_page = request.args.get('next')
+            # Guard against open redirect: only allow relative paths
+            if next_page and (next_page.startswith('http') or next_page.startswith('//' )):
+                next_page = None
             return redirect(next_page or url_for('index'))
         else:
             flash('Invalid username or password.', 'error')
@@ -150,7 +153,9 @@ def history():
 @app.route('/predict', methods=['POST'])
 @login_required
 def predict():
-    data = request.json
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Invalid request: JSON body required."}), 400
     info_thinking = float(data.get('info_thinking', 0))
     info_retrieval = float(data.get('info_retrieval', 0))
     info_ethics = float(data.get('info_ethics', 0))
@@ -203,19 +208,27 @@ def predict():
 @app.route('/save_prediction', methods=['POST'])
 @login_required
 def save_prediction():
-    data = request.form
-    new_prediction = Prediction(
-        user_id=session['user_id'],
-        info_thinking=float(data['info_thinking']),
-        info_retrieval=float(data['info_retrieval']),
-        info_ethics=float(data['info_ethics']),
-        score=float(data['score']),
-        classification=data['classification'],
-        model_results=data['model_results']
-    )
-    db.session.add(new_prediction)
-    db.session.commit()
-    return "", 204
+    try:
+        data = request.form
+        new_prediction = Prediction(
+            user_id=session['user_id'],
+            info_thinking=float(data['info_thinking']),
+            info_retrieval=float(data['info_retrieval']),
+            info_ethics=float(data['info_ethics']),
+            score=float(data['score']),
+            classification=data['classification'],
+            model_results=data['model_results']
+        )
+        db.session.add(new_prediction)
+        db.session.commit()
+        return "", 204
+    except (KeyError, ValueError) as e:
+        db.session.rollback()
+        return jsonify({"error": f"Invalid prediction data: {e}"}), 400
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error saving prediction: {e}")
+        return jsonify({"error": "Failed to save prediction. Please try again."}), 500
 
 with app.app_context():
     db.create_all()
