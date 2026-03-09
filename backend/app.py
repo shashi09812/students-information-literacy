@@ -44,12 +44,13 @@ class User(db.Model):
         return check_password_hash(self.password_hash, password)
 
 # Load trained models at startup
+# Key normalization map: corrects names that .title() gets wrong (e.g. 'knn' -> 'Knn' not 'KNN')
+_key_overrides = {'Knn': 'KNN'}
 models = {}
 for name in ['decision_tree', 'knn', 'naive_bayes', 'neural_net', 'random_forest']:
     try:
-        dict_key = name.replace('_', ' ').title()
-        if dict_key == 'Neural Net':
-            pass # Name as is
+        raw_key = name.replace('_', ' ').title()
+        dict_key = _key_overrides.get(raw_key, raw_key)
         # Absolute path to models folder within backend
         backend_dir = os.path.dirname(os.path.abspath(__file__))
         model_path = os.path.join(backend_dir, 'models', f'{name}.joblib')

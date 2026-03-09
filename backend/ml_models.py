@@ -10,8 +10,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, cohen_kappa_score
 import joblib
 
-# Ensure output directory exists for models
-os.makedirs('models', exist_ok=True)
+# Ensure output directory exists for models — always relative to THIS script's location
+script_dir = os.path.dirname(os.path.abspath(__file__))
+models_dir = os.path.join(script_dir, 'models')
+os.makedirs(models_dir, exist_ok=True)
 
 print("Synthesizing data for 320 college students...")
 
@@ -98,8 +100,8 @@ for name, model in models.items():
     print(f"F1-Score:  {results[name]['F1-Score']:.2f}%")
     print(f"Kappa:     {results[name]['Kappa']:.3f}")
     
-    # Save the model
-    joblib.dump(model, f'models/{name.replace(" ", "_").lower()}.joblib')
+    # Save the model using absolute path
+    joblib.dump(model, os.path.join(models_dir, f'{name.replace(" ", "_").lower()}.joblib'))
 
 print("\nModels successfully trained and saved to the 'models' directory.")
 

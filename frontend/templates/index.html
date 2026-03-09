@@ -132,9 +132,8 @@
         </div>
       `;
 
-        // Save to database
-        setTimeout(() => {
-          document.getElementById('save-history').onclick = () => {
+        // Attach save handler directly — no setTimeout needed since innerHTML is already set above
+        document.getElementById('save-history').onclick = () => {
             fetch('/save_prediction', {
               method: 'POST',
               headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -150,11 +149,10 @@
               alert("Assessment saved to history!");
             });
           };
-        }, 100);
       })
       .catch(err => {
         console.error(err);
-        btn.textContent = "Get Ensemble Prediction";
+        btn.textContent = "Analyze Learning Effect";
         btn.disabled = false;
         alert("Error generating prediction. Check console.");
       });

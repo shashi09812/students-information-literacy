@@ -1,51 +1,33 @@
 @echo off
 SETLOCAL EnableDelayedExpansion
 
-echo ============================================================
-echo      Information Literacy Learning Predictor - Startup
-echo ============================================================
+echo =============================================
+echo   Information Literacy Predictor Platform
+echo =============================================
 echo.
 
-:: 1. Check for Git and pull updates
-echo [1/4] Checking for platform updates...
-where git >nul 2>&1
-if %ERRORLEVEL% EQU 0 (
-    git pull
-    echo.
-) else (
-    echo [SKIP] Git not found, skipping auto-update.
-)
-
-:: 2. Check and update dependencies
-echo [2/4] Updating dependencies...
-pip install -r requirements.txt
-if %ERRORLEVEL% NEQ 0 (
-    echo [ERROR] Failed to update dependencies. Please check your internet connection.
+echo [1] Checking Python installation...
+python --version
+IF %ERRORLEVEL% NEQ 0 (
+    echo ERROR: Python is not installed or not in PATH.
     pause
-    exit /b %ERRORLEVEL%
+    exit /b 1
 )
-echo.
 
-:: 3. Ensure analytical models are present
-echo [3/4] Verifying analytical models...
-if not exist "backend\models\random_forest.joblib" (
-    echo [INFO] Models missing. Training fresh analytical components...
-    python backend\ml_models.py
-) else (
-    echo [OK] Models are ready.
+echo.
+echo [2] Installing / updating dependencies...
+pip install -r requirements.txt
+IF %ERRORLEVEL% NEQ 0 (
+    echo ERROR: Failed to install dependencies.
+    pause
+    exit /b 1
 )
-echo.
 
-:: 4. Launch the Platform
-echo [4/4] Starting the Mentor Platform...
 echo.
-echo ------------------------------------------------------------
-echo PLATFORM IS LIVE AT: http://localhost:5000
-echo ------------------------------------------------------------
-echo.
-
-:: Use Waitress for professional performance as configured in wsgi.py
+echo [3] Starting Flask application...
+echo     Access the platform at: http://localhost:5000
+echo ---------------------------------------------
 python backend\app.py
 
-pause
 ENDLOCAL
+pause
