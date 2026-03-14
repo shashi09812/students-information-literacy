@@ -1,5 +1,6 @@
 @echo off
 SETLOCAL EnableDelayedExpansion
+cd /d "%~dp0"
 
 echo =============================================
 echo   Information Literacy Predictor Platform
@@ -16,7 +17,7 @@ IF %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo [2] Installing / updating dependencies...
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 IF %ERRORLEVEL% NEQ 0 (
     echo ERROR: Failed to install dependencies.
     pause
@@ -27,7 +28,12 @@ echo.
 echo [3] Starting Flask application...
 echo     Access the platform at: http://localhost:5000
 echo ---------------------------------------------
-python backend\app.py
+python app.py
+IF %ERRORLEVEL% NEQ 0 (
+    echo ERROR: Flask application failed to start.
+    pause
+    exit /b 1
+)
 
 ENDLOCAL
 pause
