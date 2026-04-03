@@ -36,4 +36,4 @@ IF %ERRORLEVEL% NEQ 0 (
 )
 
 ENDLOCAL
-pause
+exit /b 0
