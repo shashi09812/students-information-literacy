@@ -29,28 +29,13 @@ echo [3] Starting Flask application...
 echo     Access the platform at: http://localhost:5000
 echo ---------------------------------------------
 
-rem --- ensure port 5000 is free: PowerShell first, fallback to netstat ---
-set "PID="
+rem Try freeing port 5000 using PowerShell (Stop-Process); if PowerShell unavailable, fallback to netstat+taskkill
+powershell -NoProfile -Command "try { $p=(Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue).OwningProcess; if($p){ foreach($id in $p){ Stop-Process -Id $id -Force -ErrorAction SilentlyContinue } } } catch { }" 2>nul
 
-powershell -NoProfile -Command "try { (Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess) -join ',' } catch { }" > "%temp%\ps_pid.txt" 2>nul
-for /f "usebackq delims=" %%p in ("%temp%\ps_pid.txt") do set "PID=%%p"
-if exist "%temp%\ps_pid.txt" del "%temp%\ps_pid.txt" >nul 2>&1
-
-if not defined PID (
-    netstat -ano > "%temp%\net_all.txt" 2>nul
-    findstr ":5000" "%temp%\net_all.txt" > "%temp%\net5000.txt" 2>nul
-    findstr "LISTENING" "%temp%\net5000.txt" > "%temp%\net5000_l.txt" 2>nul
-    if exist "%temp%\net5000_l.txt" (
-        for /f "usebackq tokens=5 delims= " %%a in ("%temp%\net5000_l.txt") do set "PID=%%a"
-        del "%temp%\net5000_l.txt" >nul 2>&1
-    )
-    if exist "%temp%\net5000.txt" del "%temp%\net5000.txt" >nul 2>&1
-    if exist "%temp%\net_all.txt" del "%temp%\net_all.txt" >nul 2>&1
-)
-
-if defined PID (
-    echo Found existing process listening on port 5000 (PID=%PID%). Attempting to terminate it.
-    taskkill /F /PID %PID% >nul 2>&1
+rem Fallback: use netstat parsing and taskkill if any listener remains
+netstat -ano | findstr ":5000" | findstr LISTENING >nul 2>&1
+if %ERRORLEVEL%==0 (
+    for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":5000" ^| findstr LISTENING') do taskkill /F /PID %%a >nul 2>&1
     timeout /t 1 /nobreak >nul
 )
 
