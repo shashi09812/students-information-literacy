@@ -29,11 +29,6 @@ echo [3] Starting Flask application...
 echo     Access the platform at: http://localhost:5000
 echo ---------------------------------------------
 python app.py
-IF %ERRORLEVEL% NEQ 0 (
-    echo ERROR: Flask application failed to start.
-    pause
-    exit /b 1
-)
 
 ENDLOCAL
 exit /b 0
